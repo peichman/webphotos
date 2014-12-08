@@ -1,0 +1,26 @@
+#!/usr/bin/perl -w
+use strict;
+
+#use Image::ExifTool;
+use Image::MetaData::JPEG;
+use YAML;
+
+my $jpeg = shift;
+
+# Retrieve a specific value from Exif meta-data
+my $image = Image::MetaData::JPEG->new($jpeg);
+my $image_data = $image->get_Exif_data('IMAGE_DATA', 'TEXTUAL');
+print $image_data->{Orientation}->[0], "\n";
+print $image_data->{DateTimeOriginal}->[0], "\n";
+
+=begin
+
+my $exiftool = Image::ExifTool->new;
+
+#my $info = $exiftool->ImageInfo($jpeg);
+print $exiftool->GetValue('Orientation');
+exit;
+
+#print $info->{Orientation};
+#print "\n";
+

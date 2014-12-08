@@ -1,0 +1,78 @@
+<html>
+  <head>
+    <title>[% gallery.title %]</title>
+    <style type="text/css">
+body {
+  margin: 0;
+  background: black;
+  text-align: center;
+  color: #ccc;
+}
+.nav {
+    display: inline-block;
+    margin-top: 2em;
+}
+.position {
+    margin: .5em 0;
+}
+.nolink {
+    color: #333;
+}
+.comment {
+    margin: .5em 0;
+}
+.rights {
+    margin: .5em 0;
+    font-size: .875em;
+    font-style: italic;
+}
+.photo {
+    margin: .5em 0;
+}
+.photo img {
+    vertical-align: top;
+}
+.photo .image {
+    width: 1024px;
+    margin: 0 1em;
+}
+a:link {
+    color: white;
+}
+a:visited {
+    color: #999;
+}
+    </style>
+  </head>
+  <body>
+    <div class="position">
+      <strong>[% index %] of [% count %]</strong>
+      (<a href="./">Gallery Index</a>)
+    </div>
+    <div class="photo">
+      [% IF prev %]
+	<span class="nav">
+	<a href="001">First</a>
+	—
+	<a href="[% index - 1 | format('%03d') %]">Prev</a>
+	</span>
+      [% ELSE %]
+	<span class="nav nolink">First — Prev</span>
+      [% END %]
+      <span class="image">
+	<img src="[% file %]" title="[% comment %]" alt=""/>
+      </span>
+      [% IF next %]
+	<span class="nav">
+	<a href="[% index + 1 | format('%03d') %]">Next</a>
+	—
+	<a href="[% count | format('%03d') %]">Last</a>
+	</span>
+      [% ELSE %]
+	<span class="nav nolink">Next — Last</span>
+      [% END %]
+    </div>
+    <div class="comment">[% comment %]</div>
+    <div class="rights">[% gallery.rights %]</div>
+  </body>
+</html>

@@ -1,0 +1,41 @@
+#!/bin/bash
+
+CURDIR=`readlink -f .`
+DIRECTORY=$HOME/webphotos/`basename $CURDIR`
+
+#echo $DIRECTORY
+#exit
+#DIRECTORY=./web
+
+mkdir -p $DIRECTORY
+mkdir -p $DIRECTORY/thumbs
+
+INDEX="$DIRECTORY/index.html"
+echo "<html><head><title></title></head><body style='background:black'>" > $INDEX
+
+#TODO: take a directory argument instead of just a list of files?
+#TODO: also accept a list of files in a file?
+for FILE in $*; do
+    BASENAME=`basename $FILE`
+    OUTPUT_FILE="$DIRECTORY/$BASENAME"
+    ORIENTATION=`exiv2 -Pkv $FILE | grep Orientation | awk '{print \$2}'`
+    #echo $FILE
+    #echo $OUTPUT_FILE
+    #echo $ORIENTATION
+    THUMBNAIL="$DIRECTORY/thumbs/$BASENAME"
+    case $ORIENTATION in
+	1)
+	    echo $FILE ... landscape
+	    convert $FILE -resize x100 $THUMBNAIL
+	    convert $FILE -resize 1024 $OUTPUT_FILE
+	    ;;
+	8)
+	    echo $FILE ... portrait
+	    convert $FILE -rotate 270 -resize 100 $THUMBNAIL
+	    convert $FILE -rotate 270 -resize x1024 $OUTPUT_FILE
+	    ;;
+    esac
+    echo "<a href='$BASENAME'><img src='thumbs/$BASENAME'/></a>" >> $INDEX
+done
+
+echo "</body></html>" >> $INDEX
