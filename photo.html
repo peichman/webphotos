@@ -1,60 +1,19 @@
 <html>
   <head>
     <title>[% gallery.title %]</title>
-    <style type="text/css">
-body {
-  margin: 0;
-  background: black;
-  text-align: center;
-  color: #ccc;
-}
-.nav {
-    display: inline-block;
-    margin-top: 2em;
-}
-.position {
-    margin: .5em 0;
-}
-.nolink {
-    color: #333;
-}
-.comment {
-    margin: .5em 0;
-}
-.rights {
-    margin: .5em 0;
-    font-size: .875em;
-    font-style: italic;
-}
-.photo {
-    margin: .5em 0;
-}
-.photo img {
-    vertical-align: top;
-}
-.photo .image {
-    width: 1024px;
-    margin: 0 1em;
-}
-a:link {
-    color: white;
-}
-a:visited {
-    color: #999;
-}
-    </style>
+    <link rel="stylesheet" type="text/css" href="/photo.css"/>
   </head>
   <body>
     <div class="position">
       <strong>[% index %] of [% count %]</strong>
-      (<a href="./">Gallery Index</a>)
+      (<a rel="up" href="./">Gallery Index</a>)
     </div>
     <div class="photo">
       [% IF prev %]
 	<span class="nav">
-	<a href="001">First</a>
+	<a rel="first" href="001">First</a>
 	—
-	<a href="[% index - 1 | format('%03d') %]">Prev</a>
+	<a rel="prev" href="[% index - 1 | format('%03d') %]">Prev</a>
 	</span>
       [% ELSE %]
 	<span class="nav nolink">First — Prev</span>
@@ -64,9 +23,9 @@ a:visited {
       </span>
       [% IF next %]
 	<span class="nav">
-	<a href="[% index + 1 | format('%03d') %]">Next</a>
+	<a rel="next" href="[% index + 1 | format('%03d') %]">Next</a>
 	—
-	<a href="[% count | format('%03d') %]">Last</a>
+	<a rel="last" href="[% count | format('%03d') %]">Last</a>
 	</span>
       [% ELSE %]
 	<span class="nav nolink">Next — Last</span>

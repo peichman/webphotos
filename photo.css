@@ -1,0 +1,25 @@
+@import url(common.css);
+
+.nav {
+    display: inline-block;
+    margin-top: 2em;
+}
+.position {
+    margin: .5em 0;
+}
+.nolink {
+    color: #333;
+}
+.comment {
+    margin: .5em 0;
+}
+.photo {
+    margin: .5em 0;
+}
+.photo img {
+    vertical-align: top;
+}
+.photo .image {
+    width: 1024px;
+    margin: 0 1em;
+}

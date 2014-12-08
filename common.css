@@ -1,0 +1,17 @@
+body {
+    margin: 0;
+    background: black;
+    text-align: center;
+    color: #ccc;
+}
+a:link {
+    color: white;
+}
+a:visited {
+    color: #999;
+}
+.rights {
+    margin: .5em 0;
+    font-size: .875em;
+    font-style: italic;
+}
