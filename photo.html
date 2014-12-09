@@ -1,9 +1,9 @@
-<html>
+<html prefix="dc: http://purl.org/dc/elements/1.1/">
   <head>
     <title>[% gallery.title %]</title>
     <link rel="stylesheet" type="text/css" href="/photo.css"/>
   </head>
-  <body>
+  <body about="[% file %]">
     <div class="position">
       <strong>[% index %] of [% count %]</strong>
       (<a rel="up" href="./">Gallery Index</a>)
@@ -31,7 +31,7 @@
 	<span class="nav nolink">Next — Last</span>
       [% END %]
     </div>
-    <div class="comment">[% comment %]</div>
-    <div class="rights">[% gallery.rights %]</div>
+    <div property="dc:description" class="comment">[% comment %]</div>
+    <div property="dc:rights" class="rights">[% gallery.rights %]</div>
   </body>
 </html>
