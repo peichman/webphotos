@@ -12,6 +12,7 @@
 }
 .photo img {
     vertical-align: middle;
+    border: none;
 }
 .description {
     margin: 1em 0;
