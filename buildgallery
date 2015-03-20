@@ -36,6 +36,8 @@ if (!$INDEX_ONLY) {
         if (-e $txt_file) {
             open my $fh, '<', $txt_file;
             $comment = join '', <$fh>;
+        } elsif (($gallery_metadata->{$this} || {})->{description}) {
+            $comment = $gallery_metadata->{$this}{description};
         } else {
             $comment = `exiv2 -pc $this`;
         }
