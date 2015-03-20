@@ -18,6 +18,7 @@
 	[% END %]
       </ul>
     [% END %]
+    <div property="dc:coverage" class="coverage">[% gallery.coverage %]</div>
     <div property="dc:rights" class="rights">[% gallery.rights %]</div>
     <div class="footer">
       <a href="http://www.w3.org/2012/pyRdfa/extract?uri=referer" type="text/turtle">RDF Metadata</a>
