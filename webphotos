@@ -39,3 +39,7 @@ for FILE in $*; do
 done
 
 echo "</body></html>" >> $INDEX
+
+if [ -e "$CURDIR/dc.yml" ]; then
+    cp "$CURDIR/dc.yml" "$DIRECTORY"
+fi
