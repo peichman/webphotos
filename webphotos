@@ -1,11 +1,8 @@
 #!/bin/bash
 
-CURDIR=`readlink -f .`
-DIRECTORY=$HOME/webphotos/`basename $CURDIR`
-
-#echo $DIRECTORY
-#exit
-#DIRECTORY=./web
+CURDIR=$(readlink -f .)
+SEQUENCE_FILE="$CURDIR/sequence"
+DIRECTORY=$HOME/webphotos/$(basename $CURDIR)
 
 mkdir -p $DIRECTORY
 mkdir -p $DIRECTORY/thumbs
@@ -13,30 +10,30 @@ mkdir -p $DIRECTORY/thumbs
 INDEX="$DIRECTORY/index.html"
 echo "<html><head><title></title></head><body style='background:black'>" > $INDEX
 
+TOTAL=$(wc -l <"$SEQUENCE_FILE")
+CURRENT=1
+
 #TODO: take a directory argument instead of just a list of files?
-#TODO: also accept a list of files in a file?
-for FILE in $*; do
-    BASENAME=`basename $FILE`
+while read FILE; do
+    BASENAME=$(basename "$FILE")
     OUTPUT_FILE="$DIRECTORY/$BASENAME"
-    ORIENTATION=`exiv2 -Pkv $FILE | grep Orientation | awk '{print \$2}'`
-    #echo $FILE
-    #echo $OUTPUT_FILE
-    #echo $ORIENTATION
+    ORIENTATION=$(exiv2 -pv "$FILE" | grep Orientation | awk '{print $6}')
     THUMBNAIL="$DIRECTORY/thumbs/$BASENAME"
     case $ORIENTATION in
 	1)
-	    echo $FILE ... landscape
+	    printf "(%3d/%3d) %s ... landscape\n" $CURRENT $TOTAL $FILE
 	    convert $FILE -resize x100 $THUMBNAIL
 	    convert $FILE -resize 1024 $OUTPUT_FILE
 	    ;;
 	8)
-	    echo $FILE ... portrait
+	    printf "(%3d/%3d) %s ... portrait\n" $CURRENT $TOTAL $FILE
 	    convert $FILE -rotate 270 -resize 100 $THUMBNAIL
 	    convert $FILE -rotate 270 -resize x1024 $OUTPUT_FILE
 	    ;;
     esac
     echo "<a href='$BASENAME'><img src='thumbs/$BASENAME'/></a>" >> $INDEX
-done
+    CURRENT=$((CURRENT + 1))
+done < "$SEQUENCE_FILE"
 
 echo "</body></html>" >> $INDEX
 
