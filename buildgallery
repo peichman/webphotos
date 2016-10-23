@@ -4,6 +4,7 @@ use strict;
 use Template;
 use Image::MetaData::JPEG;
 use Getopt::Long;
+use FindBin;
 
 GetOptions(
     'metadata=s' => \my $METADATA_FILE,
@@ -16,7 +17,7 @@ $METADATA_FILE ||= 'dc.yml';
 my @files = @ARGV;
 
 my $template = Template->new({
-    INCLUDE_PATH => [qw{/home/peter/projects/webphotos}],
+    INCLUDE_PATH => [$FindBin::RealBin],
     ENCODING => 'utf8',
 });
 use YAML;
