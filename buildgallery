@@ -1,46 +1,84 @@
 #!/usr/bin/perl -w
 use strict;
 
+# buildgallery -d ~/webphotos ~/photos/D90/{photoset}
+use YAML;
 use Template;
-use Image::MetaData::JPEG;
 use Getopt::Long;
 use FindBin;
+use Cwd;
+use File::Slurp;
+use File::Spec::Functions qw{catfile};
+use File::Basename;
+use Imager;
+use File::Path qw{make_path};
+use Image::ExifTool;
 
 GetOptions(
     'metadata=s' => \my $METADATA_FILE,
     'index-only|x' => \my $INDEX_ONLY,
+    'd=s' => \my $OUTPUT_BASE_DIR,
 );
+
+my $INPUT_DIR = shift || cwd;
+my $PHOTOSET_ID = basename($INPUT_DIR);
 
 # default metadata filename
 $METADATA_FILE ||= 'dc.yml';
+my $metadata_file = catfile($INPUT_DIR, $METADATA_FILE);
 
-my @files = @ARGV;
+# sequence file filename
+my $SEQUENCE_FILE = 'sequence';
+
+my @files = read_file(catfile($INPUT_DIR, $SEQUENCE_FILE), chomp => 1);
+#print "$PHOTOSET_ID\n";
+#print "$PHOTOSET_ID:" . basename($_) . "\n" foreach @files;
+#exit;
+
+my $output_dir = catfile($OUTPUT_BASE_DIR, $PHOTOSET_ID);
+make_path(catfile($output_dir, 'thumbs'));
 
 my $template = Template->new({
     INCLUDE_PATH => [$FindBin::RealBin],
     ENCODING => 'utf8',
 });
-use YAML;
 
-my $gallery_metadata = -e $METADATA_FILE ? YAML::LoadFile($METADATA_FILE) : {};
+my $gallery_metadata = -e $metadata_file ? YAML::LoadFile($metadata_file) : {};
 
 if (!$INDEX_ONLY) {
     for my $i (0 .. @files - 1) {
+        #TODO: write IIIF info.json files
         my $prev = $i > 0 ? $files[$i - 1] : '';
         my $next = $i < @files - 1 ? $files[$i + 1] : '';
         my $this = $files[$i];
-        #my $image = Image::MetaData::JPEG->new($this, 'COM', 'FASTREADONLY');
-        #my @segments = $image->get_segments('COM');
+        my $original_file = catfile($INPUT_DIR, $this);
+
+        my $original = Imager->new(file => $original_file);
+        my $orientation = $original->tags(name => 'exif_orientation');
+        #TODO: are there other EXIF values we should copy over?
+        my $exif = Image::ExifTool->new;
+        $exif->SetNewValue('EXIF:Orientation#' => $orientation);
+
+        my $large = $original->scale(xpixels => 1024);
+        my $large_file = catfile($output_dir, $this);
+        $large->write(file => $large_file, type => 'jpeg');
+        $exif->WriteInfo($large_file);
+
+        my $thumb = $original->scale(ypixels => 100);
+        my $thumb_file = catfile($output_dir, 'thumbs', $this);
+        $thumb->write(file => $thumb_file, type => 'jpeg');
+        $exif->WriteInfo($thumb_file);
+
         my $comment;
         # check for a .txt comment sidecar
-        (my $txt_file = $this) =~ s/\.jpg/.txt/i;
+        (my $txt_file = $original_file) =~ s/\.jpg/.txt/i;
         if (-e $txt_file) {
             open my $fh, '<', $txt_file;
             $comment = join '', <$fh>;
         } elsif (($gallery_metadata->{$this} || {})->{description}) {
             $comment = $gallery_metadata->{$this}{description};
         } else {
-            $comment = `exiv2 -pc $this`;
+            $comment = `exiv2 -pc $original_file`;
         }
 
         my $outfile = sprintf '%03d.html', $i + 1;
@@ -56,9 +94,10 @@ if (!$INDEX_ONLY) {
                 count => scalar @files,
                 gallery => $gallery_metadata,
             },
-            $outfile,
+            catfile($output_dir, $outfile),
             { binmode => ':encoding(UTF-8)' },
-        ) or die $template->error;
+        ) or die ":::" . $template->error;
+
         printf "%15s < %s > %-15s\n", $prev, $this, $next;
     }
 }
@@ -67,8 +106,9 @@ $template->process(
     'index.tt',
     {
         files => \@files,
+        #iiif_uris => [ map { "/images/$PHOTOSET_ID:" . basename($_, '.JPG') } @files ],
         gallery => $gallery_metadata,
     },
-    'index.html',
+    catfile($output_dir, 'index.html'),
     { binmode => ':encoding(UTF-8)' },
 ) or die $template->error;

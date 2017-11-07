@@ -15,3 +15,7 @@ a:visited {
     font-size: .875em;
     font-style: italic;
 }
+img {
+    /* use the orientation from the image's EXIF data, if available */
+    image-orientation: from-image;
+}
