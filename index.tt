@@ -7,7 +7,7 @@
     <h1>[% gallery.title %]</h1>
     <ul class="gallery">
       [% FOREACH file IN files %]
-        <li class="photo"><a href="[% loop.index + 1 | format('%03d') %]"><img src="thumbs/[% file %]"/></a></li>
+        <li class="photo"><a href="[% loop.index + 1 | format('%03d') %]"><img src="[% file %]"/></a></li>
       [% END %]
     </ul>
     <div property="dc:description" class="description">[% gallery.description %]</div>

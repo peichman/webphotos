@@ -13,6 +13,7 @@ use File::Basename;
 use Imager;
 use File::Path qw{make_path};
 use Image::ExifTool;
+use JSON;
 
 GetOptions(
     'metadata=s' => \my $METADATA_FILE,
@@ -23,6 +24,8 @@ GetOptions(
 my $INPUT_DIR = shift || cwd;
 my $PHOTOSET_ID = basename($INPUT_DIR);
 
+my $IIIF_BASE_URI = 'https://iiif.echodin.net/';
+
 # default metadata filename
 $METADATA_FILE ||= 'dc.yml';
 my $metadata_file = catfile($INPUT_DIR, $METADATA_FILE);
@@ -31,27 +34,29 @@ my $metadata_file = catfile($INPUT_DIR, $METADATA_FILE);
 my $SEQUENCE_FILE = 'sequence';
 
 my @files = read_file(catfile($INPUT_DIR, $SEQUENCE_FILE), chomp => 1);
-#print "$PHOTOSET_ID\n";
-#print "$PHOTOSET_ID:" . basename($_) . "\n" foreach @files;
-#exit;
-
-my $output_dir = catfile($OUTPUT_BASE_DIR, $PHOTOSET_ID);
-make_path(catfile($output_dir, 'thumbs'));
 
 my $template = Template->new({
     INCLUDE_PATH => [$FindBin::RealBin],
     ENCODING => 'utf8',
 });
 
-my $gallery_metadata = -e $metadata_file ? YAML::LoadFile($metadata_file) : {};
+my $json_encoder = JSON->new->utf8->canonical;
 
+my $output_dir = catfile($OUTPUT_BASE_DIR, 'images');
+make_path($output_dir);
+make_path(catfile($OUTPUT_BASE_DIR, 'manifests'));
+
+my $metadata = -e $metadata_file ? YAML::LoadFile($metadata_file) : {};
+
+my @images;
 if (!$INDEX_ONLY) {
     for my $i (0 .. @files - 1) {
-        #TODO: write IIIF info.json files
         my $prev = $i > 0 ? $files[$i - 1] : '';
         my $next = $i < @files - 1 ? $files[$i + 1] : '';
+
         my $this = $files[$i];
         my $original_file = catfile($INPUT_DIR, $this);
+        my $file_id = basename($this, '.JPG');
 
         my $original = Imager->new(file => $original_file);
         my $orientation = $original->tags(name => 'exif_orientation');
@@ -59,56 +64,110 @@ if (!$INDEX_ONLY) {
         my $exif = Image::ExifTool->new;
         $exif->SetNewValue('EXIF:Orientation#' => $orientation);
 
-        my $large = $original->scale(xpixels => 1024);
-        my $large_file = catfile($output_dir, $this);
-        $large->write(file => $large_file, type => 'jpeg');
-        $exif->WriteInfo($large_file);
+        my @sizes = map {
+            scale_image($original, "$PHOTOSET_ID:$file_id", $output_dir, $exif, @$_)
+        } ([], [xpixels => 1024], [ypixels => 100], [ypixels => 90]);
 
-        my $thumb = $original->scale(ypixels => 100);
-        my $thumb_file = catfile($output_dir, 'thumbs', $this);
-        $thumb->write(file => $thumb_file, type => 'jpeg');
-        $exif->WriteInfo($thumb_file);
+        my $info = {
+            '@context' => 'http://iiif.io/api/image/2/context.json',
+            '@id'      => "https://iiif.echodin.net/images/$PHOTOSET_ID:$file_id",
+            protocol   => 'http://iiif.io/api/image',
+            width      => $orientation == 1 ? $original->getwidth : $original->getheight,
+            height     => $orientation == 1 ? $original->getheight : $original->getwidth,
+            profile    => [ 'http://iiif.io/api/image/2/level0.json' ],
+            sizes      => \@sizes,
+            attribution => $metadata->{rights},
+        };
+        my $json_file = catfile($output_dir, "$PHOTOSET_ID:$file_id", 'info.json');
+        write_file($json_file, $json_encoder->encode($info));
 
-        my $comment;
-        # check for a .txt comment sidecar
-        (my $txt_file = $original_file) =~ s/\.jpg/.txt/i;
-        if (-e $txt_file) {
-            open my $fh, '<', $txt_file;
-            $comment = join '', <$fh>;
-        } elsif (($gallery_metadata->{$this} || {})->{description}) {
-            $comment = $gallery_metadata->{$this}{description};
-        } else {
-            $comment = `exiv2 -pc $original_file`;
-        }
+        push @images, $info;
 
-        my $outfile = sprintf '%03d.html', $i + 1;
-        print "$outfile\n";
-        $template->process(
-            'photo.html',
-            {
-                prev => $prev,
-                next => $next,
-                file => $this,
-                comment => $comment,
-                index => $i + 1,
-                count => scalar @files,
-                gallery => $gallery_metadata,
-            },
-            catfile($output_dir, $outfile),
-            { binmode => ':encoding(UTF-8)' },
-        ) or die ":::" . $template->error;
-
-        printf "%15s < %s > %-15s\n", $prev, $this, $next;
+        print "$PHOTOSET_ID:$file_id\n";
     }
 }
 
-$template->process(
-    'index.tt',
-    {
-        files => \@files,
-        #iiif_uris => [ map { "/images/$PHOTOSET_ID:" . basename($_, '.JPG') } @files ],
-        gallery => $gallery_metadata,
-    },
-    catfile($output_dir, 'index.html'),
-    { binmode => ':encoding(UTF-8)' },
-) or die $template->error;
+my $manifest_root_uri = $IIIF_BASE_URI . 'manifests/' . $PHOTOSET_ID;
+my $manifest = {
+    # Metadata about this manifest file
+    '@context' =>  'http://iiif.io/api/presentation/2/context.json',
+    '@id' => "$manifest_root_uri/manifest",
+    '@type' =>  'sc:Manifest',
+
+    # Descriptive metadata about the object/work
+    label =>  $metadata->{title},
+    metadata =>  [
+        map { { label => ucfirst, value => $metadata->{$_} } } grep { $metadata->{$_} } qw{title creator coverage date identifier}
+    ],
+    description => $metadata->{description},
+
+    # Rights Information
+    #'license' =>  'http://rightsstatements.org/vocab/NoC-NC/1.0/',
+    'attribution' =>  $metadata->{rights},
+
+    # List of sequences
+    'sequences' =>  [
+        {
+            '@id'    => "$manifest_root_uri/sequences/normal",
+            '@type'  => 'sc:Sequence',
+            label    => 'Original Shot Order',
+            canvases => [ map { {
+                '@id'   => "$manifest_root_uri/canvas/" . sprintf('%03d', $_ + 1),
+                '@type' => 'sc:Canvas',
+                label   => sprintf('%03d', $_ + 1),
+                width   => $images[$_]->{width},
+                height  => $images[$_]->{height},
+                images  => [
+                    {
+                        '@id'      => "$manifest_root_uri/annotation/image-" . sprintf('%03d', $_ + 1),
+                        '@type'    => 'oa:Annotation',
+                        motivation => 'sc:painting',
+                        on         => "$manifest_root_uri/canvas/" . sprintf('%03d', $_ + 1),
+                        resource   => {
+                            '@id'   => "$manifest_root_uri/res/" . sprintf('%03d', $_ + 1) . '.jpg',
+                            '@type' => 'dctypes:Image',
+                            format  => 'image/jpeg',
+                            width   => $images[$_]->{width},
+                            height  => $images[$_]->{height},
+                            service => {
+                                '@context' => "http://iiif.io/api/image/2/context.json",
+                                '@id'      => $images[$_]->{'@id'},
+                                profile    => "http://iiif.io/api/image/2/level0.json",
+                            },
+                        },
+                    },
+                ],
+                thumbnail => {
+                    '@id'   => $images[$_]->{'@id'} . '/full/' . $images[$_]->{sizes}[2]{width} . ',/0/default.jpg',
+                    width   => 0 + $images[$_]->{sizes}[2]{width},
+                    height  => 0 + $images[$_]->{sizes}[2]{height},
+                    service => {
+                        '@context' => "http://iiif.io/api/image/2/context.json",
+                        '@id'      => $images[$_]->{'@id'},
+                        profile    => "http://iiif.io/api/image/2/level0.json"
+                    },
+                },
+            } } (0 .. @images - 1) ],
+        },
+    ],
+};
+
+my $manifest_dir = catfile($OUTPUT_BASE_DIR, 'manifests', $PHOTOSET_ID);
+make_path($manifest_dir);
+write_file(catfile($manifest_dir, 'manifest.json'), $json_encoder->encode($manifest));
+
+sub scale_image {
+    my ($original, $iiif_id, $output_dir, $exif, %factor) = @_;
+    my $orientation = $original->tags(name => 'exif_orientation');
+    my $scaled = %factor ? $original->scale(%factor) : $original->copy;
+    if ($orientation == 8) {
+        $scaled = $scaled->rotate(right => 270);
+    }
+    my $size = $scaled->getwidth . ',';
+    my $dir = catfile($output_dir, $iiif_id, 'full', $size, '0');
+    make_path($dir);
+    my $scaled_file = catfile($dir, 'default.jpg');
+    $scaled->write(file => $scaled_file, type => 'jpeg');
+    #$exif->WriteInfo($scaled_file);
+    return { width => $scaled->getwidth, height => $scaled->getheight };
+}
