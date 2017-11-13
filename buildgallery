@@ -159,7 +159,7 @@ write_file(catfile($manifest_dir, 'manifest.json'), $json_encoder->encode($manif
 sub scale_image {
     my ($original, $iiif_id, $output_dir, $exif, %factor) = @_;
     my $orientation = $original->tags(name => 'exif_orientation');
-    my $scaled = %factor ? $original->scale(%factor) : $original->copy;
+    my $scaled = %factor ? $original->scale(%factor, qtype => 'mixing') : $original->copy;
     if ($orientation == 8) {
         $scaled = $scaled->rotate(right => 270);
     }
@@ -167,7 +167,7 @@ sub scale_image {
     my $dir = catfile($output_dir, $iiif_id, 'full', $size, '0');
     make_path($dir);
     my $scaled_file = catfile($dir, 'default.jpg');
-    $scaled->write(file => $scaled_file, type => 'jpeg');
+    $scaled->write(file => $scaled_file, type => 'jpeg', jpegquality=>90);
     #$exif->WriteInfo($scaled_file);
     return { width => $scaled->getwidth, height => $scaled->getheight };
 }
