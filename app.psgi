@@ -65,7 +65,7 @@ my $router = router {
 
             my @thumbnails = map { $_->{thumbnail} } @canvases;
             $template->process(
-                'index.tt',
+                'gallery.html',
                 {
                     base_uri => Plack::Request->new($env)->base,
                     files    => [ map { $_->{'@id'} } @thumbnails ],
