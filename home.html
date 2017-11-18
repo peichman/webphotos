@@ -1,0 +1,14 @@
+<html>
+  <head>
+    <title>Photos</title>
+    <link rel="stylesheet" href="common.css" type="text/css"/>
+  </head>
+  <body>
+    <h1>Photos</h1>
+    <ul>
+      [% FOREACH photoset IN photosets %]
+      <li><a href="[% photoset.id %]">[% photoset.title %]</a> ([% photoset.date %])</li>
+      [% END %]
+    </ul>
+  </body>
+</html>

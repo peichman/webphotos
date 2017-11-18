@@ -14,6 +14,8 @@ use Encode;
 use Plack::Request;
 
 my $IIIF_BASE_URL = 'https://iiif.echodin.net/manifests/';
+my $PHOTOSETS_FILE = catfile($FindBin::RealBin, 'photosets.json');
+
 my $ua = LWP::UserAgent->new;
 my $template = Template->new({
     INCLUDE_PATH => [$FindBin::RealBin],
@@ -42,7 +44,15 @@ sub get_metadata {
 my $router = router {
     resource '/' => sub {
         GET {
-            return [200, ['Content-Type' => 'text/plain;charset=utf-8'], ['Hello world']];
+            my $photosets = decode_json(read_file($PHOTOSETS_FILE));
+            $template->process(
+                'home.html',
+                {
+                    photosets => $photosets,
+                },
+                \my $output,
+            );
+            return [200, ['Content-Type' => 'text/html; charset=UTF-8'], [encode_utf8($output)]];
         };
     };
 
