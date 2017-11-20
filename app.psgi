@@ -68,7 +68,6 @@ my $router = router {
             $template->process(
                 'gallery.html',
                 {
-                    base_uri => Plack::Request->new($env)->base,
                     files    => [ map { $_->{'@id'} } @thumbnails ],
                     gallery  => get_metadata($manifest),
                 },
