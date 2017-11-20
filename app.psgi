@@ -44,7 +44,8 @@ sub get_metadata {
 my $router = router {
     resource '/' => sub {
         GET {
-            my $photosets = decode_json(read_file($PHOTOSETS_FILE));
+            my $json = read_file($PHOTOSETS_FILE);
+            my $photosets = decode_json($json);
             $template->process(
                 'home.html',
                 {
