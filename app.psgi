@@ -12,6 +12,7 @@ use JSON;
 use FindBin;
 use Encode;
 use Plack::Request;
+use IO::Callback::HTTP;
 
 my $IIIF_BASE_URL = 'https://iiif.echodin.net/manifests/';
 my $PHOTOSETS_FILE = catfile($FindBin::RealBin, 'photosets.json');
@@ -21,6 +22,20 @@ my $template = Template->new({
     INCLUDE_PATH => [$FindBin::RealBin],
     ENCODING => 'utf8',
 });
+
+sub get_image {
+    my ($manifest, $image) = @_;
+    my @canvases = @{ $manifest->{sequences}[0]{canvases} };
+
+    my $count = scalar @canvases;
+    my $i = $image;
+
+    if ($i < 1 || $i > $count) {
+        die [404, ['Content-Type' => 'text/plain; charset=UTF-8'], ['Not Found']];
+    }
+
+    return (map { $_->{images}[0] } @canvases)[$i - 1];
+}
 
 sub get_manifest {
     my ($photoset) = @_;
@@ -81,16 +96,12 @@ my $router = router {
             my ($env, $params) = @_;
             my $manifest = eval { get_manifest($params->{photoset}); };
             return $@ if $@;
-            my @canvases = @{ $manifest->{sequences}[0]{canvases} };
-
-            my $count = scalar @canvases;
             my $i = $params->{image};
+            my $image = eval { get_image($manifest, $i) };
+            return $@ if $@;
 
-            if ($i < 1 || $i > $count) {
-                return [404, ['Content-Type' => 'text/plain; charset=UTF-8'], ['Not Found']];
-            }
-
-            my $image = (map { $_->{images}[0] } @canvases)[$i - 1];
+            my @canvases = @{ $manifest->{sequences}[0]{canvases} };
+            my $count = scalar @canvases;
             my $aspect_ratio = $image->{resource}{width} / $image->{resource}{height};
             my $w = $aspect_ratio > 1 ? 1024 : 680;
             my $this = $image->{resource}{service}{'@id'} . "/full/$w,/0/default.jpg";
@@ -108,6 +119,26 @@ my $router = router {
                 \my $output,
             );
             return [200, ['Content-Type' => 'text/html; charset=UTF-8'], [encode_utf8($output)]];
+        };
+    };
+    resource '/{photoset}/{image}/{file}' => sub {
+        GET {
+            my ($env, $params) = @_;
+            my $manifest = eval { get_manifest($params->{photoset}); };
+            return $@ if $@;
+            my $i = $params->{image};
+            my $image = eval { get_image($manifest, $i) };
+            return $@ if $@;
+
+            my @canvases = @{ $manifest->{sequences}[0]{canvases} };
+            my $count = scalar @canvases;
+            my $aspect_ratio = $image->{resource}{width} / $image->{resource}{height};
+            my $w = $aspect_ratio > 1 ? 1024 : 680;
+            my $this = $image->{resource}{service}{'@id'} . "/full/$w,/0/default.jpg";
+
+            my $handle = IO::Callback::HTTP->new('<', $this, agent => $ua, bytes => 0);
+            my $filename = sprintf('%s.%s.jpg', $params->{photoset}, $i);
+            return [200, ['Content-Type' => 'image/jpeg', 'Content-Disposition' => "attachment; filename=$filename"], $handle];
         };
     };
 };

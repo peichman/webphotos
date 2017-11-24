@@ -6,7 +6,10 @@
   <body about="[% file %]">
     <div class="position">
       <strong>[% index %] of [% count %]</strong>
-      (<a rel="up" href="../[% gallery.identifier %]">Gallery Index</a>)
+      —
+      <a href="[% index | format('%03d') %]/file">Download</a>
+      —
+      <a rel="up" href="../[% gallery.identifier %]">Gallery Index</a>
     </div>
     <div class="photo">
       [% IF prev %]
