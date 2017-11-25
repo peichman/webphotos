@@ -1,6 +1,7 @@
 <html prefix="dc: http://purl.org/dc/elements/1.1/">
   <head>
     <title property="dc:title">[% gallery.title %]</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <link rel="stylesheet" type="text/css" href="/gallery.css"/>
     <base href="/[% gallery.identifier %]/"/>
   </head>
@@ -22,9 +23,7 @@
     <div property="dc:coverage" class="coverage">[% gallery.coverage %]</div>
     <div property="dc:rights" class="rights">[% gallery.rights %]</div>
     <div class="footer">
-      <a href="http://www.w3.org/2012/pyRdfa/extract?uri=referer" type="text/turtle">RDF Metadata</a>
+      <a href="/">Photo Galleries Index</a>
     </div>
   </body>
 </html>
-<!-- vim: ft=html
--->

@@ -1,5 +1,8 @@
 @import url(common.css);
 
+h1 {
+   margin: .5em 0;
+}
 .gallery {
     margin: 0;
     padding: 0;
@@ -15,9 +18,12 @@
     border: none;
 }
 .description {
-    margin: 1em 0;
+    margin: .5em 0;
 }
 .footer {
-    margin: .5em 0;
     font-size: .875em;
+    width: 15em;
+    margin: 2em auto 1em auto;
+    border-top: 1px dotted #333;
+    padding-top: 1em;
 }

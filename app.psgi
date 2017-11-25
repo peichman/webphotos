@@ -50,8 +50,9 @@ sub get_manifest {
 sub get_metadata {
     my ($manifest) = @_;
     return {
-        title  => $manifest->{label},
-        rights => $manifest->{attribution},
+        title       => $manifest->{label},
+        rights      => $manifest->{attribution},
+        description => $manifest->{description},
         map { lc($_->{label}) => $_->{value} } @{ $manifest->{metadata} },
     };
 }

@@ -1,8 +1,18 @@
 @import url(common.css);
 
+h1 {
+    font-size: 1em;
+    margin: .5em;
+}
+h1 a:link, h1 a:visited {
+    color: #ccc;
+    text-decoration: none;
+}
+h1 a:hover {
+    text-decoration: underline;
+}
 .nav {
     display: inline-block;
-    margin-top: 2em;
 }
 .position {
     margin: .5em 0;
@@ -10,7 +20,7 @@
 .nolink {
     color: #333;
 }
-.comment {
+.metadata {
     margin: .5em 0;
 }
 .photo {
@@ -18,8 +28,5 @@
 }
 .photo img {
     vertical-align: top;
-}
-.photo .image {
-    width: 1024px;
-    margin: 0 1em;
+    max-width: 100%;
 }

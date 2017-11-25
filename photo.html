@@ -1,40 +1,44 @@
 <html prefix="dc: http://purl.org/dc/elements/1.1/">
   <head>
     <title>[% gallery.title %]</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <link rel="stylesheet" type="text/css" href="/photo.css"/>
   </head>
   <body about="[% file %]">
+    <h1><a rel="up" href="../[% gallery.identifier %]">[% gallery.title %]</a></h1>
     <div class="position">
-      <strong>[% index %] of [% count %]</strong>
-      —
-      <a href="[% index | format('%03d') %]/file">Download</a>
-      —
-      <a rel="up" href="../[% gallery.identifier %]">Gallery Index</a>
-    </div>
-    <div class="photo">
       [% IF prev %]
 	<span class="nav">
 	<a rel="first" href="001">First</a>
-	—
+	–
 	<a rel="prev" href="[% index - 1 | format('%03d') %]">Prev</a>
 	</span>
+        —
       [% ELSE %]
-	<span class="nav nolink">First — Prev</span>
+	<span class="nav nolink">First – Prev —</span>
       [% END %]
-      <span class="image">
-	<img src="[% file %]" title="[% comment %]" alt=""/>
-      </span>
+      <strong>[% index %] of [% count %]</strong>
       [% IF next %]
 	<span class="nav">
+        —
 	<a rel="next" href="[% index + 1 | format('%03d') %]">Next</a>
-	—
+        –
 	<a rel="last" href="[% count | format('%03d') %]">Last</a>
 	</span>
       [% ELSE %]
-	<span class="nav nolink">Next — Last</span>
+	<span class="nav nolink">— Next – Last</span>
       [% END %]
     </div>
-    <div property="dc:description" class="comment">[% comment %]</div>
-    <div property="dc:rights" class="rights">[% gallery.rights %]</div>
+    <div class="photo">
+      <span class="image">
+	<img src="[% file %]" title="[% comment %]" alt=""/>
+      </span>
+    </div>
+    <div>
+      <a href="[% index | format('%03d') %]/file">Download</a>
+    </div>
+    <div property="dc:description" class="metadata description">[% gallery.description %]</div>
+    <div property="dc:date" class="metadata date">[% gallery.date %]</div>
+    <div property="dc:rights" class="metadata rights">[% gallery.rights %]</div>
   </body>
 </html>
