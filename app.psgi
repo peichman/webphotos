@@ -147,6 +147,7 @@ my $router = router {
 builder {
     # serve static CSS files
     enable 'Static', path => qr{\.css$}, root => '';
+    enable 'Static', path => qr{^/\.well-known/}, root => $ENV{WEBROOT};
     # application
     sub { $router->dispatch(shift) };
 };
