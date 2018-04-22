@@ -2,12 +2,33 @@
   <head>
     <title>Photos</title>
     <link rel="stylesheet" href="common.css" type="text/css"/>
+    <style type="text/css">
+      ul {
+        padding: 1em;
+        text-align: left;
+        margin: 0 auto;
+        max-width: 40em;
+      }
+      li {
+        line-height: 1.5em;
+        list-style-type: none;
+        margin-left: 7.75em;
+        text-indent: -7.75em;
+      }
+      a:hover {
+        text-decoration: none;
+      }
+    </style>
   </head>
   <body>
     <h1>Photos</h1>
     <ul>
       [% FOREACH photoset IN photosets %]
-      <li><a href="[% photoset.id %]">[% photoset.title %]</a> ([% photoset.date %])</li>
+      <li>
+        <span class="date">[% photoset.date %]</span>
+        —
+        <a href="[% photoset.id %]">[% photoset.title %]</a>
+      </li>
       [% END %]
     </ul>
   </body>
