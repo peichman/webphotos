@@ -50,6 +50,7 @@ sub get_manifest {
 sub get_metadata {
     my ($manifest) = @_;
     return {
+        id          => $manifest->{'@id'},
         title       => $manifest->{label},
         rights      => $manifest->{attribution},
         description => $manifest->{description},
@@ -65,7 +66,7 @@ my $router = router {
             $template->process(
                 'home.html',
                 {
-                    photosets => $photosets,
+                    photosets => [ map { get_metadata($_) } @{ $photosets->{members} } ],
                 },
                 \my $output,
             );
